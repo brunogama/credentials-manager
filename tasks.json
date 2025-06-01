@@ -1,591 +1,115 @@
 {
   "tasks": [
     {
-      "id": "964f8783-d526-4d4a-884f-d2439631bcb3",
-      "name": "Create Security Configuration Management System",
-      "description": "Implement centralized security configuration system with ~/.credmatch/security.conf file supporting environment-specific settings, runtime validation, and secure file permissions. This foundational component enables all other security enhancements to be configurable and maintainable.",
-      "notes": "This is the foundation for all other security enhancements. Must be implemented first as other tasks depend on configuration system.",
+      "id": "d645f89f-a603-4f7c-a58a-a98bfe9a8593",
+      "name": "Create atomic file operations module",
+      "description": "Implement atomic file operations module (lib/atomic.sh) with secure file handling and permission verification",
+      "notes": "Follow shellcheck guidelines and maintain 2-space indentation",
       "status": "completed",
       "dependencies": [],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:24:10.924Z",
+      "createdAt": "2025-06-01T21:51:06.582Z",
+      "updatedAt": "2025-06-01T22:09:50.438Z",
       "relatedFiles": [
         {
-          "path": "~/.credmatch/security.conf",
+          "path": "lib/atomic.sh",
           "type": "CREATE",
-          "description": "Main security configuration file with all security settings"
+          "description": "New module for atomic file operations"
         },
         {
-          "path": "lib/config-manager.sh",
+          "path": "tests/test_atomic.bats",
           "type": "CREATE",
-          "description": "Configuration loading and validation functions"
+          "description": "Unit tests for atomic operations"
         }
       ],
-      "implementationGuide": "Create configuration file format with sections for file permissions (UMASK=077, FILE_PERMISSIONS=600, DIR_PERMISSIONS=700), session management (SESSION_TIMEOUT=1800, AUTO_CLEANUP=true), audit logging (AUDIT_LOGGING=true, AUDIT_LOG_RETENTION_DAYS=90), environment security (REQUIRE_SECURE_ENVIRONMENT=false, WARN_SSH_CONNECTIONS=true), and advanced features (ENABLE_HSM=false, ENABLE_BIOMETRIC=false). Implement load_security_config() function that validates config file permissions (600), sources configuration with error handling, and sets secure defaults. Include config file creation with secure permissions and validation functions.",
-      "verificationCriteria": "Configuration file created with 600 permissions, load_security_config() function validates and loads settings correctly, default configuration covers all security aspects, config validation prevents insecure settings",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance.",
-      "summary": "Successfully implemented centralized security configuration management system with ~/.credmatch/security.conf file (600 permissions), lib/config-manager.sh library with load_security_config() function, comprehensive validation, error handling, and secure defaults. All tests pass and system meets verification criteria.",
-      "completedAt": "2025-06-01T20:24:10.924Z"
+      "implementationGuide": "1. Create lib/atomic.sh\n2. Implement atomic_write function using mktemp and mv\n3. Add permission verification\n4. Add error handling for all operations",
+      "verificationCriteria": "- All tests pass\n- shellcheck reports no issues\n- File operations are atomic\n- Permissions are verified after operations",
+      "analysisResult": "The security enhancements will be implemented following TDD approach, with focus on atomic file operations, enhanced API key validation, JSON structured logging, and comprehensive testing. All changes will maintain compatibility with existing code structure and follow shell scripting best practices.",
+      "summary": "Successfully verified that the atomic file operations module is fully implemented and functional. The lib/atomic.sh module provides atomic_write function using mktemp and mv operations, includes comprehensive error handling, sets secure file permissions (600), and passes all tests (5/5) and shellcheck validation. The implementation meets all verification criteria and follows bash best practices with 2-space indentation.",
+      "completedAt": "2025-06-01T22:09:50.437Z"
     },
     {
-      "id": "76807882-b653-46c5-ba50-0ccfdc5eb441",
-      "name": "Build Shared Security Library",
-      "description": "Create shared security library (lib/security-common.sh) to eliminate code duplication across all scripts. Extract common security functions including cleanup_sensitive_vars(), setup_secure_environment(), secure input handling, and standardized error handling patterns.",
-      "notes": "Critical for eliminating code duplication found in analysis. All scripts currently implement identical security patterns that should be centralized.",
+      "id": "c80dc0ce-eecb-45cc-ba89-82eb1ab7a05f",
+      "name": "Enhance API key validation",
+      "description": "Create enhanced API key validation module with entropy checking and pattern validation",
+      "notes": "Ensure backward compatibility with existing validation",
       "status": "pending",
-      "dependencies": [
-        {
-          "taskId": "964f8783-d526-4d4a-884f-d2439631bcb3"
-        }
-      ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
+      "dependencies": [],
+      "createdAt": "2025-06-01T21:51:06.582Z",
+      "updatedAt": "2025-06-01T21:51:06.582Z",
       "relatedFiles": [
         {
-          "path": "lib/security-common.sh",
+          "path": "lib/validation.sh",
           "type": "CREATE",
-          "description": "Shared security functions library"
+          "description": "New module for enhanced validation"
         },
         {
-          "path": "credmatch",
-          "type": "TO_MODIFY",
-          "description": "Update to use shared security library",
-          "lineStart": 25,
-          "lineEnd": 50
-        },
-        {
-          "path": "store-api-key",
-          "type": "TO_MODIFY",
-          "description": "Update to use shared security library",
-          "lineStart": 26,
-          "lineEnd": 45
-        },
-        {
-          "path": "dump-api-keys",
-          "type": "TO_MODIFY",
-          "description": "Update to use shared security library",
-          "lineStart": 29,
-          "lineEnd": 50
-        },
-        {
-          "path": "get-api-key",
-          "type": "TO_MODIFY",
-          "description": "Update to use shared security library",
-          "lineStart": 23,
-          "lineEnd": 40
-        }
-      ],
-      "implementationGuide": "Extract common functions from existing scripts: cleanup_sensitive_vars() with comprehensive variable clearing and history cleanup, setup_secure_environment() with script-specific HISTIGNORE patterns, get_secure_input() function combining stty -echo and read -s patterns, standardized error() function with cleanup integration, color constants (RED, GREEN, YELLOW, BLUE, NC), and common security warnings. Implement source pattern for scripts: source \"$(dirname \"$0\")/lib/security-common.sh\". Ensure backward compatibility by maintaining existing function signatures.",
-      "verificationCriteria": "Shared library contains all common security functions, all scripts successfully source and use shared functions, no code duplication remains, existing functionality preserved, shellcheck passes for all files",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
-    },
-    {
-      "id": "01287636-81a6-4ec0-8246-88f2b9428536",
-      "name": "Implement File Permissions and Umask Management",
-      "description": "Implement automatic file permission management ensuring all credential-related files are created with secure permissions (600 for files, 700 for directories). Add umask management, permission validation, and correction of existing files.",
-      "notes": "Critical security requirement preventing unauthorized access to credential files at filesystem level. Must be applied consistently across all scripts.",
-      "status": "pending",
-      "dependencies": [
-        {
-          "taskId": "76807882-b653-46c5-ba50-0ccfdc5eb441"
-        }
-      ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
-      "relatedFiles": [
-        {
-          "path": "lib/security-common.sh",
-          "type": "TO_MODIFY",
-          "description": "Add file permission management functions"
-        },
-        {
-          "path": "credmatch",
-          "type": "TO_MODIFY",
-          "description": "Integrate permission management for credential store",
-          "lineStart": 100,
-          "lineEnd": 120
-        },
-        {
-          "path": "dump-api-keys",
-          "type": "TO_MODIFY",
-          "description": "Secure output file permissions",
-          "lineStart": 150,
-          "lineEnd": 170
-        }
-      ],
-      "implementationGuide": "Create setup_secure_permissions() function setting umask 077, secure_file() function applying chmod 600 with error handling, secure_directory() function applying chmod 700, and validate_permissions() function checking and correcting existing file permissions. Integrate permission management into all file creation operations. Add test_file_permissions() function for validation. Implement automatic permission correction on script startup for credential store directory and files.",
-      "verificationCriteria": "All new files created with 600 permissions, directories with 700 permissions, umask set to 077, existing files corrected on startup, permission validation functions work correctly, no files created with insecure permissions",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
-    },
-    {
-      "id": "ecaf7405-857a-4ff6-bd28-5fdc6232d309",
-      "name": "Develop Secure Temporary File Handling",
-      "description": "Replace any temporary file operations with secure alternatives using mktemp, immediate permission setting to 600, automatic cleanup on script exit, and secure temporary directory location with overwrite protection.",
-      "notes": "Eliminates risk of sensitive data exposure through temporary files. Essential for scripts that process credential data.",
-      "status": "pending",
-      "dependencies": [
-        {
-          "taskId": "01287636-81a6-4ec0-8246-88f2b9428536"
-        }
-      ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
-      "relatedFiles": [
-        {
-          "path": "lib/security-common.sh",
-          "type": "TO_MODIFY",
-          "description": "Add secure temporary file functions"
-        },
-        {
-          "path": "credmatch",
-          "type": "TO_MODIFY",
-          "description": "Replace any temporary file usage with secure alternatives",
-          "lineStart": 200,
-          "lineEnd": 250
-        }
-      ],
-      "implementationGuide": "Create create_secure_temp() function using mktemp with secure prefix, immediate chmod 600 application, register_temp_file() for cleanup tracking, and cleanup_temp_files() with secure overwrite using dd if=/dev/urandom before deletion. Implement TEMP_FILES array for tracking, trap integration for automatic cleanup, and secure temporary directory selection. Replace any existing temporary file usage in scripts with secure alternatives.",
-      "verificationCriteria": "All temporary files created with mktemp and 600 permissions, automatic cleanup on exit, secure overwrite before deletion, no temporary files left after script execution, temp file registry works correctly",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
-    },
-    {
-      "id": "b644a8ae-2785-46ca-add0-0e845fd6c25e",
-      "name": "Build Input Validation Framework",
-      "description": "Implement comprehensive input validation and sanitization for all user inputs including service names, git URLs, API keys, and master passwords. Prevent injection attacks and ensure data integrity with strict validation rules.",
-      "notes": "Critical for preventing injection attacks and ensuring data integrity. Must be applied to all user input points.",
-      "status": "pending",
-      "dependencies": [
-        {
-          "taskId": "76807882-b653-46c5-ba50-0ccfdc5eb441"
-        }
-      ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
-      "relatedFiles": [
-        {
-          "path": "lib/security-common.sh",
-          "type": "TO_MODIFY",
-          "description": "Add input validation and sanitization functions"
-        },
-        {
-          "path": "credmatch",
-          "type": "TO_MODIFY",
-          "description": "Add validation for git URLs and master passwords",
-          "lineStart": 170,
-          "lineEnd": 200
-        },
-        {
-          "path": "store-api-key",
-          "type": "TO_MODIFY",
-          "description": "Add validation for service names and API keys",
-          "lineStart": 140,
-          "lineEnd": 160
-        },
-        {
-          "path": "get-api-key",
-          "type": "TO_MODIFY",
-          "description": "Add validation for service names",
-          "lineStart": 100,
-          "lineEnd": 110
-        },
-        {
-          "path": "dump-api-keys",
-          "type": "TO_MODIFY",
-          "description": "Add validation for pattern inputs",
-          "lineStart": 120,
-          "lineEnd": 140
-        }
-      ],
-      "implementationGuide": "Create validate_input() function with type-specific validation: service_name (alphanumeric, underscore, dash, max 64 chars), git_url (https:// or git@ prefix validation), api_key (length checks, dangerous character detection), master_password (minimum 8 characters). Implement sanitize_input() function removing control characters and normalizing whitespace. Add length limits, regex pattern matching, and clear error messages for invalid inputs. Integrate validation into all user input points across scripts.",
-      "verificationCriteria": "All user inputs validated with appropriate rules, injection attempts blocked, clear error messages for invalid inputs, length limits enforced, sanitization removes dangerous characters",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
-    },
-    {
-      "id": "469bc7dd-3f59-436a-a493-4c314e8c33cd",
-      "name": "Implement Audit Logging System",
-      "description": "Create secure audit logging system that logs all credential operations without exposing sensitive data. Include timestamp, user, action, service name, and status with log rotation and retention policies.",
-      "notes": "Provides accountability and compliance support. Critical for enterprise environments requiring audit trails.",
-      "status": "pending",
-      "dependencies": [
-        {
-          "taskId": "01287636-81a6-4ec0-8246-88f2b9428536"
-        }
-      ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
-      "relatedFiles": [
-        {
-          "path": "lib/security-common.sh",
-          "type": "TO_MODIFY",
-          "description": "Add audit logging functions"
-        },
-        {
-          "path": "~/.credmatch/audit.log",
+          "path": "tests/test_validation.bats",
           "type": "CREATE",
-          "description": "Audit log file with 600 permissions"
-        },
-        {
-          "path": "credmatch",
-          "type": "TO_MODIFY",
-          "description": "Add audit logging to all credential operations",
-          "lineStart": 240,
-          "lineEnd": 400
-        },
-        {
-          "path": "store-api-key",
-          "type": "TO_MODIFY",
-          "description": "Add audit logging for store operations",
-          "lineStart": 190,
-          "lineEnd": 210
-        },
-        {
-          "path": "get-api-key",
-          "type": "TO_MODIFY",
-          "description": "Add audit logging for retrieve operations",
-          "lineStart": 115,
-          "lineEnd": 130
-        },
-        {
-          "path": "dump-api-keys",
-          "type": "TO_MODIFY",
-          "description": "Add audit logging for dump operations",
-          "lineStart": 200,
-          "lineEnd": 220
+          "description": "Unit tests for validation"
         }
       ],
-      "implementationGuide": "Create audit logging system with AUDIT_LOG_FILE=\"$HOME/.credmatch/audit.log\", init_audit_log() function creating secure log directory and file, audit_log() function formatting entries with timestamp, user@hostname, PID, action, service, and status. Implement rotate_audit_log() with 10MB size limit and date-based rotation. Add retention policy cleanup. Integrate audit logging into all credential operations: store, fetch, list, sync. Never log actual credential values, only metadata.",
-      "verificationCriteria": "All credential operations logged with metadata only, log rotation works at 10MB limit, retention policy enforced, log file has 600 permissions, no sensitive data in logs, audit trail complete and accurate",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
+      "implementationGuide": "1. Create lib/validation.sh\n2. Implement entropy calculation\n3. Add pattern validation\n4. Add comprehensive test cases",
+      "verificationCriteria": "- All tests pass\n- Validates API key entropy\n- Catches weak patterns\n- Maintains backward compatibility",
+      "analysisResult": "The security enhancements will be implemented following TDD approach, with focus on atomic file operations, enhanced API key validation, JSON structured logging, and comprehensive testing. All changes will maintain compatibility with existing code structure and follow shell scripting best practices."
     },
     {
-      "id": "22fd5ef2-dae6-4c78-a83b-c453be4e8dfa",
-      "name": "Add Environment Security Validation",
-      "description": "Implement environment security checks to warn users about potentially insecure execution contexts including SSH connections, screen recording detection, terminal security validation, and network context assessment.",
-      "notes": "Increases user awareness of security risks in different environments. Important for remote work scenarios.",
+      "id": "cf2db085-3119-489b-8066-87702822e9d0",
+      "name": "Implement JSON structured logging",
+      "description": "Create JSON-formatted audit logging module with rotation support",
+      "notes": "Ensure log file permissions are maintained",
       "status": "pending",
       "dependencies": [
         {
-          "taskId": "76807882-b653-46c5-ba50-0ccfdc5eb441"
+          "taskId": "d645f89f-a603-4f7c-a58a-a98bfe9a8593"
         }
       ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
+      "createdAt": "2025-06-01T21:51:06.582Z",
+      "updatedAt": "2025-06-01T21:51:06.582Z",
       "relatedFiles": [
         {
-          "path": "lib/security-common.sh",
-          "type": "TO_MODIFY",
-          "description": "Add environment security validation functions"
-        },
-        {
-          "path": "credmatch",
-          "type": "TO_MODIFY",
-          "description": "Integrate environment security checks",
-          "lineStart": 460,
-          "lineEnd": 470
-        },
-        {
-          "path": "store-api-key",
-          "type": "TO_MODIFY",
-          "description": "Add environment security validation",
-          "lineStart": 125,
-          "lineEnd": 130
-        },
-        {
-          "path": "get-api-key",
-          "type": "TO_MODIFY",
-          "description": "Add environment security validation",
-          "lineStart": 93,
-          "lineEnd": 98
-        },
-        {
-          "path": "dump-api-keys",
-          "type": "TO_MODIFY",
-          "description": "Add environment security validation",
-          "lineStart": 130,
-          "lineEnd": 135
-        }
-      ],
-      "implementationGuide": "Create check_secure_environment() function detecting SSH connections via SSH_CONNECTION/SSH_CLIENT variables, terminal type checking for VS Code/iTerm with screen recording detection using pgrep, tmux/screen session detection via TMUX/STY variables. Implement warning system displaying security concerns with actionable recommendations. Add network security validation checking for VPN connections, DNS security, and secure proxy configuration. Integrate environment checks into script initialization.",
-      "verificationCriteria": "SSH connections detected and warned, screen recording detection works on macOS, terminal security warnings displayed, network security validation functional, warnings are actionable and clear",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
-    },
-    {
-      "id": "b299dd80-aea1-45a6-b5c3-b446bd61c78e",
-      "name": "Enhance Credmatch with Git Security",
-      "description": "Implement git security enhancements for credmatch script including HTTPS enforcement, GPG commit signing when available, SSL certificate verification, and secure git configuration management.",
-      "notes": "Ensures integrity and authenticity of credential repository operations. Critical for distributed credential management.",
-      "status": "pending",
-      "dependencies": [
-        {
-          "taskId": "76807882-b653-46c5-ba50-0ccfdc5eb441"
-        },
-        {
-          "taskId": "469bc7dd-3f59-436a-a493-4c314e8c33cd"
-        }
-      ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
-      "relatedFiles": [
-        {
-          "path": "lib/security-common.sh",
-          "type": "TO_MODIFY",
-          "description": "Add git security configuration functions"
-        },
-        {
-          "path": "credmatch",
-          "type": "TO_MODIFY",
-          "description": "Integrate git security into repository operations",
-          "lineStart": 180,
-          "lineEnd": 220
-        }
-      ],
-      "implementationGuide": "Create configure_git_security() function setting commit.gpgsign=true when GPG available, forcing HTTPS with url.\"https://github.com/\".insteadOf=\"git@github.com:\", enabling SSL verification with http.sslVerify=true, and setting transfer.fsckObjects=true for integrity checks. Integrate git security configuration into repository initialization and sync operations. Add GPG key detection and configuration guidance for users.",
-      "verificationCriteria": "Git operations use HTTPS only, GPG signing enabled when available, SSL certificates verified, git security configuration applied to repositories, secure git settings persist",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
-    },
-    {
-      "id": "b9e583b3-1bca-42a5-9598-2985a160a84f",
-      "name": "Enhance Store-API-Key with Keychain Security",
-      "description": "Implement enhanced macOS Keychain security settings including auto-lock configuration, keychain integrity verification, access validation, and improved keychain interaction patterns.",
-      "notes": "Strengthens the underlying security of credential storage mechanism. Essential for macOS keychain-based credential management.",
-      "status": "pending",
-      "dependencies": [
-        {
-          "taskId": "76807882-b653-46c5-ba50-0ccfdc5eb441"
-        },
-        {
-          "taskId": "469bc7dd-3f59-436a-a493-4c314e8c33cd"
-        }
-      ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
-      "relatedFiles": [
-        {
-          "path": "lib/security-common.sh",
-          "type": "TO_MODIFY",
-          "description": "Add keychain security functions"
-        },
-        {
-          "path": "store-api-key",
-          "type": "TO_MODIFY",
-          "description": "Integrate enhanced keychain security",
-          "lineStart": 200,
-          "lineEnd": 216
-        },
-        {
-          "path": "get-api-key",
-          "type": "TO_MODIFY",
-          "description": "Add keychain access validation",
-          "lineStart": 115,
-          "lineEnd": 125
-        }
-      ],
-      "implementationGuide": "Create configure_keychain_security() function setting keychain auto-lock to 1 hour with security set-keychain-settings -t 3600, implementing keychain integrity verification with security verify-cert, and adding validate_keychain_access() function testing access without retrieving data. Enhance keychain interaction with better error handling, access prompts, and security warnings. Add keychain backup verification and multiple keychain profile support.",
-      "verificationCriteria": "Keychain auto-lock configured correctly, integrity verification works, access validation prevents unauthorized access, enhanced error handling provides clear feedback, keychain security settings persist",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
-    },
-    {
-      "id": "3506179e-db72-452c-9680-567f7a5c0e88",
-      "name": "Enhance Dump-API-Keys with Secure Output",
-      "description": "Implement secure output handling for dump-api-keys including enhanced safe mode, secure file permissions for output, improved security warnings, and secure clipboard integration options.",
-      "notes": "Critical for preventing credential exposure during bulk export operations. Must handle sensitive data securely.",
-      "status": "pending",
-      "dependencies": [
-        {
-          "taskId": "01287636-81a6-4ec0-8246-88f2b9428536"
-        },
-        {
-          "taskId": "ecaf7405-857a-4ff6-bd28-5fdc6232d309"
-        }
-      ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
-      "relatedFiles": [
-        {
-          "path": "dump-api-keys",
-          "type": "TO_MODIFY",
-          "description": "Enhance secure output handling and safe mode",
-          "lineStart": 150,
-          "lineEnd": 230
-        }
-      ],
-      "implementationGuide": "Enhance safe mode output with comprehensive security headers and instructions, implement automatic chmod 600 for output files, add secure clipboard integration options (pbcopy with warnings), improve security warnings about eval usage and file handling. Create secure output validation ensuring no sensitive data leakage in error messages, add output file encryption options, and implement secure temporary file usage for processing.",
-      "verificationCriteria": "Output files created with 600 permissions, safe mode generates secure files with proper headers, security warnings are comprehensive, clipboard integration is secure, no sensitive data in error messages",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
-    },
-    {
-      "id": "c49ca470-6d96-4ead-b993-97a937a8044a",
-      "name": "Enhance Get-API-Key with Security Warnings",
-      "description": "Implement enhanced security warnings and secure output handling for get-api-key including improved terminal security checks, secure output options, and comprehensive usage guidance.",
-      "notes": "Ensures secure handling of individual credential retrieval. Important for preventing accidental credential exposure.",
-      "status": "pending",
-      "dependencies": [
-        {
-          "taskId": "22fd5ef2-dae6-4c78-a83b-c453be4e8dfa"
-        },
-        {
-          "taskId": "01287636-81a6-4ec0-8246-88f2b9428536"
-        }
-      ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
-      "relatedFiles": [
-        {
-          "path": "get-api-key",
-          "type": "TO_MODIFY",
-          "description": "Enhance security warnings and output handling",
-          "lineStart": 35,
-          "lineEnd": 80
-        }
-      ],
-      "implementationGuide": "Enhance security warning system with terminal session privacy checks, add secure output options including clipboard integration (pbcopy), file output with secure permissions, and environment variable setting guidance. Improve usage messages with security best practices, add output validation preventing accidental exposure, and implement secure handling of retrieved credentials with automatic cleanup.",
-      "verificationCriteria": "Enhanced security warnings displayed, secure output options available, clipboard integration works securely, usage guidance includes security best practices, credential cleanup is automatic",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
-    },
-    {
-      "id": "0fdfcc95-021d-4b38-8770-0b2d2b7a5683",
-      "name": "Implement Session Timeout and Auto-cleanup",
-      "description": "Add configurable session timeout mechanism with automatic cleanup of sensitive data, background timeout processes, and graceful session management with user notifications.",
-      "notes": "Reduces risk of long-term credential exposure in memory. Important for shared or public computer usage.",
-      "status": "pending",
-      "dependencies": [
-        {
-          "taskId": "964f8783-d526-4d4a-884f-d2439631bcb3"
-        },
-        {
-          "taskId": "76807882-b653-46c5-ba50-0ccfdc5eb441"
-        }
-      ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
-      "relatedFiles": [
-        {
-          "path": "lib/security-common.sh",
-          "type": "TO_MODIFY",
-          "description": "Add session timeout and auto-cleanup functions"
-        },
-        {
-          "path": "credmatch",
-          "type": "TO_MODIFY",
-          "description": "Integrate session timeout for long-running operations",
-          "lineStart": 470,
-          "lineEnd": 480
-        }
-      ],
-      "implementationGuide": "Create session timeout system with SESSION_TIMEOUT=1800 (30 minutes) default, setup_session_timeout() function creating background cleanup process, SESSION_PID_FILE tracking for timeout management, and cancel_session_timeout() for normal exit cleanup. Implement background timeout process using sleep with cleanup trigger, automatic sensitive variable clearing on timeout, and user notification system. Add configurable timeout values through security configuration.",
-      "verificationCriteria": "Session timeout works with configurable duration, background cleanup process functions correctly, sensitive data cleared on timeout, user notifications work, timeout cancellation on normal exit",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
-    },
-    {
-      "id": "5009a80e-2da0-4b10-aa90-3c7b4c9222d8",
-      "name": "Create Installation Security Script",
-      "description": "Develop automated security setup and validation script (setup-security.sh) that configures secure permissions, creates default configuration, validates environment, and enforces security best practices.",
-      "notes": "Ensures consistent and secure installation across environments. Critical for enterprise deployment and user onboarding.",
-      "status": "pending",
-      "dependencies": [
-        {
-          "taskId": "964f8783-d526-4d4a-884f-d2439631bcb3"
-        },
-        {
-          "taskId": "01287636-81a6-4ec0-8246-88f2b9428536"
-        }
-      ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
-      "relatedFiles": [
-        {
-          "path": "setup-security.sh",
+          "path": "lib/audit.sh",
           "type": "CREATE",
-          "description": "Automated security setup and validation script"
+          "description": "New module for JSON audit logging"
         },
         {
-          "path": "lib/security-common.sh",
-          "type": "DEPENDENCY",
-          "description": "Required for security functions"
+          "path": "tests/test_audit.bats",
+          "type": "CREATE",
+          "description": "Unit tests for audit logging"
         }
       ],
-      "implementationGuide": "Create setup-security.sh script with setup_credmatch_security() function creating ~/.credmatch directory with 700 permissions, setting script permissions to 755, creating default security configuration, and validating security environment. Implement security validation checks for dependencies, file permissions, keychain access, and git configuration. Add automated backup creation, security policy enforcement, and comprehensive setup reporting.",
-      "verificationCriteria": "Setup script creates secure directory structure, default configuration generated correctly, script permissions set appropriately, environment validation works, security best practices enforced",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
+      "implementationGuide": "1. Create lib/audit.sh\n2. Implement JSON log formatting\n3. Add log rotation support\n4. Add comprehensive test cases",
+      "verificationCriteria": "- All tests pass\n- Logs are valid JSON\n- Log rotation works\n- File permissions are maintained",
+      "analysisResult": "The security enhancements will be implemented following TDD approach, with focus on atomic file operations, enhanced API key validation, JSON structured logging, and comprehensive testing. All changes will maintain compatibility with existing code structure and follow shell scripting best practices."
     },
     {
-      "id": "d2a4a5c1-3ba4-4d53-ab28-561455012975",
-      "name": "Implement Backup and Recovery System",
-      "description": "Create secure backup and recovery mechanisms with encrypted backup creation, secure backup storage, integrity verification, automated scheduling, and secure recovery procedures.",
-      "notes": "Ensures business continuity while maintaining security standards. Critical for credential data protection and disaster recovery.",
+      "id": "2a921582-410a-4a74-b560-3be803a4bd7a",
+      "name": "Integration testing",
+      "description": "Create integration tests covering complete workflows with new security features",
+      "notes": "Cover edge cases and error conditions",
       "status": "pending",
       "dependencies": [
         {
-          "taskId": "01287636-81a6-4ec0-8246-88f2b9428536"
+          "taskId": "d645f89f-a603-4f7c-a58a-a98bfe9a8593"
         },
         {
-          "taskId": "ecaf7405-857a-4ff6-bd28-5fdc6232d309"
+          "taskId": "c80dc0ce-eecb-45cc-ba89-82eb1ab7a05f"
+        },
+        {
+          "taskId": "cf2db085-3119-489b-8066-87702822e9d0"
         }
       ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
+      "createdAt": "2025-06-01T21:51:06.582Z",
+      "updatedAt": "2025-06-01T21:51:06.582Z",
       "relatedFiles": [
         {
-          "path": "lib/security-common.sh",
-          "type": "TO_MODIFY",
-          "description": "Add backup and recovery functions"
-        },
-        {
-          "path": "~/.credmatch/backups/",
+          "path": "tests/integration_test.bats",
           "type": "CREATE",
-          "description": "Secure backup directory with 700 permissions"
-        },
-        {
-          "path": "credmatch",
-          "type": "TO_MODIFY",
-          "description": "Integrate backup functionality",
-          "lineStart": 500,
-          "lineEnd": 506
+          "description": "Integration test suite"
         }
       ],
-      "implementationGuide": "Create backup system with create_secure_backup() function using tar and OpenSSL encryption, secure backup directory with 700 permissions, backup file encryption with AES-256-CBC, and restore_secure_backup() function with decryption and validation. Implement backup integrity verification, automated backup scheduling options, backup retention policies, and secure backup storage recommendations. Add backup validation and recovery testing.",
-      "verificationCriteria": "Encrypted backups created successfully, backup integrity verification works, secure recovery procedures function, backup retention policies enforced, backup directory has correct permissions",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
-    },
-    {
-      "id": "7f46e8f4-2142-42c0-8497-87c684a9e2da",
-      "name": "Develop Security Testing Suite",
-      "description": "Create comprehensive security test suite validating all security enhancements including permission tests, input validation tests, audit logging verification, environment detection tests, and cleanup function validation.",
-      "notes": "Ensures all security enhancements work correctly and maintain security standards. Essential for validation and ongoing maintenance.",
-      "status": "pending",
-      "dependencies": [
-        {
-          "taskId": "469bc7dd-3f59-436a-a493-4c314e8c33cd"
-        },
-        {
-          "taskId": "22fd5ef2-dae6-4c78-a83b-c453be4e8dfa"
-        },
-        {
-          "taskId": "b644a8ae-2785-46ca-add0-0e845fd6c25e"
-        }
-      ],
-      "createdAt": "2025-06-01T20:18:49.017Z",
-      "updatedAt": "2025-06-01T20:18:49.017Z",
-      "relatedFiles": [
-        {
-          "path": "tests/security-tests.sh",
-          "type": "CREATE",
-          "description": "Comprehensive security test suite"
-        },
-        {
-          "path": "tests/test-data/",
-          "type": "CREATE",
-          "description": "Test data directory for security tests"
-        },
-        {
-          "path": "lib/security-common.sh",
-          "type": "DEPENDENCY",
-          "description": "Functions being tested"
-        }
-      ],
-      "implementationGuide": "Create security test suite with run_security_tests() function orchestrating all tests, test_file_permissions() validating file creation permissions, test_input_validation() checking validation rules and injection prevention, test_audit_logging() verifying log entries and rotation, test_environment_detection() checking security warnings, and test_cleanup_functions() ensuring proper cleanup. Implement automated test execution, test reporting, and integration with shellcheck validation.",
-      "verificationCriteria": "All security tests pass, permission tests validate correct file creation, input validation tests prevent injection, audit logging tests verify entries, environment tests detect security issues, cleanup tests ensure no data leakage",
-      "analysisResult": "Implement comprehensive security enhancements for credential management scripts (credmatch, store-api-key, dump-api-keys, get-api-key) following a 4-phase roadmap. The implementation creates a shared security library to eliminate code duplication, implements centralized configuration management, adds audit logging, environment validation, and advanced security features while maintaining backward compatibility and user experience. All enhancements follow bash best practices with shellcheck compliance."
+      "implementationGuide": "1. Create integration test suite\n2. Test atomic operations with logging\n3. Test validation with audit logging\n4. Test error conditions and recovery",
+      "verificationCriteria": "- All integration tests pass\n- Edge cases are covered\n- Error handling works\n- Performance is acceptable",
+      "analysisResult": "The security enhancements will be implemented following TDD approach, with focus on atomic file operations, enhanced API key validation, JSON structured logging, and comprehensive testing. All changes will maintain compatibility with existing code structure and follow shell scripting best practices."
     }
   ]
 }

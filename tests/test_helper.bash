@@ -224,3 +224,42 @@ run_with_stderr() {
 
   return $status
 }
+
+# Test helper functions and common setup
+
+# Get the directory where this script is located
+TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Get the project root directory
+PROJECT_ROOT="$(cd "$TESTS_DIR/.." && pwd)"
+
+# Add lib directory to PATH
+PATH="$PROJECT_ROOT/lib:$PATH"
+
+# Common test setup
+setup_test_env() {
+  # Create test directories if they don't exist
+  mkdir -p "$TESTS_DIR/fixtures"
+  mkdir -p "$TESTS_DIR/tmp"
+}
+
+# Common test teardown
+teardown_test_env() {
+  # Clean up test directories
+  rm -rf "$TESTS_DIR/tmp"/*
+}
+
+# Helper function to verify file permissions
+verify_permissions() {
+  local file="$1"
+  local expected_perms="$2"
+  local actual_perms
+
+  if [[ "$(uname)" == "Darwin" ]]; then
+    actual_perms=$(stat -f "%Lp" "$file")
+  else
+    actual_perms=$(stat -c "%a" "$file")
+  fi
+
+  [ "$actual_perms" = "$expected_perms" ]
+}
