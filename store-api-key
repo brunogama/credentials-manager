@@ -1,0 +1,266 @@
+#!/bin/bash
+#
+# store-api-key - Store API keys securely in macOS Keychain
+# Usage: store-api-key <service_name> [api_key] [--force]
+# Example: store-api-key SERVICEA_API_KEY # You will be prompted for the key
+#
+# This script uses the macOS security command to store API keys
+# in the user's login keychain securely.
+#
+# Note: This script uses intentional security features that may trigger shellcheck warnings:
+# - History manipulation (HISTCONTROL, HISTIGNORE, set +o history) for sensitive data protection
+# - Terminal control (stty) for secure password input without echo
+
+set -euo pipefail
+
+# Security: Prevent command from being saved in shell history
+# shellcheck disable=SC2034  # HISTCONTROL and HISTIGNORE are used by shell
+set +H  # Disable history expansion
+export HISTCONTROL=ignorespace:ignoredups
+export HISTIGNORE="*store-api-key*:*api*key*:*secret*:*token*"
+
+# Trap to ensure cleanup on exit
+trap 'cleanup_sensitive_vars' EXIT INT TERM
+
+# Script name for error messages
+# shellcheck disable=SC2155  # basename is safe and readonly requires assignment
+readonly SCRIPT_NAME="$(basename "$0")"
+
+# Default settings
+FORCE_UPDATE=false
+
+# Function to cleanup sensitive variables
+cleanup_sensitive_vars() {
+    unset API_KEY
+    unset API_KEY_INPUT
+    # Clear history of current session for this command if it contains sensitive data
+    if command -v history >/dev/null 2>&1; then
+        history -d "$(history 1 | awk '{print $1}')" 2>/dev/null || true
+    fi
+}
+
+# Function to setup secure environment
+setup_secure_environment() {
+    # Temporarily disable history for this session
+    # shellcheck disable=SC2039  # set +o history is intentional for security
+    set +o history 2>/dev/null || true
+
+    # Check if command line contains potential API keys (long alphanumeric strings)
+    local cmd_line="$*"
+    if [[ "$cmd_line" =~ [[:space:]][^[:space:]]*[a-zA-Z0-9]{12,} ]]; then
+        echo -e "\033[1;33m⚠️  WARNING: Potential API key detected in command line arguments!\033[0m" >&2
+        echo -e "\033[1;33m   For better security, omit the API key from command line and let the script prompt you.\033[0m" >&2
+        echo -e "\033[1;33m   If you must use command line arguments, prefix your command with a space.\033[0m" >&2
+        echo "" >&2
+    fi
+}
+
+# Function to display usage information (for help requests)
+usage() {
+    cat << EOF
+Usage: $SCRIPT_NAME <service_name> [api_key] [--force]
+
+Store an API key securely in the macOS Keychain.
+
+Arguments:
+  service_name    The name/identifier for the API key (e.g., SERVICEA_API_KEY)
+  api_key         (Optional) The API key value to store. If not provided, you will be prompted.
+
+Options:
+  --force         Override existing key without confirmation
+
+Example:
+  $SCRIPT_NAME SERVICEA_API_KEY # You will be prompted for the key
+  $SCRIPT_NAME SERVICEA_API_KEY randomapikey
+  $SCRIPT_NAME SERVICEA_API_KEY newkey --force
+
+🔒 SECURITY RECOMMENDATIONS:
+  • ALWAYS omit the API key from command line arguments - let the script prompt you securely
+  • If you must provide the API key as an argument, prefix your command with a space: ' store-api-key ...'
+  • This script automatically prevents commands from being saved in shell history
+  • Use unique, strong API keys and rotate them regularly
+  • Never share API keys or commit them to version control
+
+⚠️  SECURITY NOTES:
+  - The key is stored in the user's login keychain with macOS security
+  - If a key with the same service name exists, you'll be prompted to confirm unless --force is used
+  - The script requires macOS and the 'security' command
+  - API keys are sensitive data - handle them with the same care as passwords
+
+🚫 NEVER share your API keys or commit them to version control!
+EOF
+    exit 0
+}
+
+# Function to display usage information (for errors)
+usage_error() {
+    cat << EOF
+Usage: $SCRIPT_NAME <service_name> [api_key] [--force]
+
+Store an API key securely in the macOS Keychain.
+
+Arguments:
+  service_name    The name/identifier for the API key (e.g., SERVICEA_API_KEY)
+  api_key         (Optional) The API key value to store. If not provided, you will be prompted.
+
+Options:
+  --force         Override existing key without confirmation
+
+Example:
+  $SCRIPT_NAME SERVICEA_API_KEY # You will be prompted for the key
+  $SCRIPT_NAME SERVICEA_API_KEY randomapikey
+  $SCRIPT_NAME SERVICEA_API_KEY newkey --force
+
+🔒 SECURITY RECOMMENDATIONS:
+  • ALWAYS omit the API key from command line arguments - let the script prompt you securely
+  • If you must provide the API key as an argument, prefix your command with a space: ' store-api-key ...'
+  • This script automatically prevents commands from being saved in shell history
+  • Use unique, strong API keys and rotate them regularly
+  • Never share API keys or commit them to version control
+
+⚠️  SECURITY NOTES:
+  - The key is stored in the user's login keychain with macOS security
+  - If a key with the same service name exists, you'll be prompted to confirm unless --force is used
+  - The script requires macOS and the 'security' command
+  - API keys are sensitive data - handle them with the same care as passwords
+
+🚫 NEVER share your API keys or commit them to version control!
+EOF
+    exit 1
+}
+
+# Function to display error messages
+error() {
+    echo "Error: $1" >&2
+    cleanup_sensitive_vars
+    exit "${2:-1}"
+}
+
+# Function to securely read API key
+get_api_key_securely() {
+    local service_name="$1"
+    local api_key_input=""
+
+    # Ensure we're not echoing to terminal
+    # shellcheck disable=SC2039  # stty is intentional for secure password input
+    stty -echo 2>/dev/null || true
+
+    echo -n "Enter API key for '$service_name': " >&2
+    read -rs api_key_input
+    echo >&2
+
+    # Re-enable echo
+    # shellcheck disable=SC2039  # stty is intentional for secure password input
+    stty echo 2>/dev/null || true
+
+    if [[ -z "$api_key_input" ]]; then
+        error "API key cannot be empty when prompted" 3
+    fi
+
+    echo "$api_key_input"
+}
+
+# Check if running on macOS
+if [[ "$OSTYPE" != "darwin"* ]]; then
+    error "This script requires macOS" 2
+fi
+
+# Check if security command is available
+if ! command -v security &> /dev/null; then
+    error "The 'security' command is not available" 2
+fi
+
+# Setup secure environment before processing arguments
+setup_secure_environment "$@"
+
+# Check for help flag
+if [[ $# -eq 1 && ("$1" == "--help" || "$1" == "-h") ]]; then
+    usage
+fi
+
+# Parse arguments
+if [[ $# -lt 1 || $# -gt 3 ]]; then # Allow 1 argument (service_name only)
+    usage_error
+fi
+
+# Assign service_name argument
+readonly SERVICE_NAME="$1"
+API_KEY="" # Initialize API_KEY
+
+# Handle other arguments
+if [[ $# -eq 1 ]]; then
+    # Only service_name provided, will prompt for API_KEY later
+    :
+elif [[ $# -eq 2 ]]; then
+    if [[ "$2" == "--force" ]]; then
+        FORCE_UPDATE=true
+        # API_KEY still empty, will prompt
+    else
+        API_KEY="$2" # service_name and api_key provided
+    fi
+elif [[ $# -eq 3 ]]; then
+    if [[ "$3" == "--force" ]]; then
+        API_KEY="$2"
+        FORCE_UPDATE=true
+    elif [[ "$2" == "--force" ]]; then # Allow --force before api_key
+        API_KEY="$3"
+        FORCE_UPDATE=true
+    else
+        error "Invalid arguments. Use --force correctly." 1
+    fi
+fi
+
+# Validate service name
+if [[ -z "$SERVICE_NAME" ]]; then
+    error "Service name cannot be empty" 3
+fi
+
+# If API_KEY was not provided as an argument, prompt for it securely
+if [[ -z "$API_KEY" ]]; then
+    API_KEY=$(get_api_key_securely "$SERVICE_NAME")
+fi
+
+# Validate API key (it should now be set either from arg or prompt)
+if [[ -z "$API_KEY" ]]; then
+    error "API key cannot be empty" 3 # Should not happen if logic above is correct
+fi
+
+# Validate service name format (alphanumeric, underscore, dash)
+if ! [[ "$SERVICE_NAME" =~ ^[A-Za-z0-9_-]+$ ]]; then
+    error "Service name must contain only letters, numbers, underscores, and dashes" 3
+fi
+
+# Check if the key already exists in the keychain
+if security find-generic-password -s "$SERVICE_NAME" &>/dev/null; then
+    if [[ "$FORCE_UPDATE" == false ]]; then
+        read -rp "API key '$SERVICE_NAME' already exists in keychain. Overwrite? (y/n): " confirm
+        if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+            echo "Operation cancelled. API key not updated."
+            cleanup_sensitive_vars
+            exit 0
+        fi
+    fi
+    echo "Updating existing API key for '$SERVICE_NAME'..."
+else
+    echo "Creating new API key for '$SERVICE_NAME'..."
+fi
+
+# Store the API key in the keychain
+# -a: account name (using current user)
+# -s: service name
+# -w: password/secret
+# -U: update if exists
+if security add-generic-password \
+    -a "$USER" \
+    -s "$SERVICE_NAME" \
+    -w "$API_KEY" \
+    -U \
+    2>/dev/null; then
+    echo "✅ Successfully stored API key for '$SERVICE_NAME' in keychain"
+    echo "🔒 API key is now securely stored and can be retrieved with: get-api-key $SERVICE_NAME"
+else
+    error "Failed to store API key in keychain" 4
+fi
+
+# Clear sensitive variables before exit
+cleanup_sensitive_vars

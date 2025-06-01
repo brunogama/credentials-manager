@@ -1,0 +1,157 @@
+#!/bin/bash
+#
+# get-api-key - Retrieve API keys from macOS Keychain
+# Usage: get-api-key <service_name>
+# Example: get-api-key SERVICEA_API_KEY
+#
+# This script uses the macOS security command to retrieve API keys
+# from the user's login keychain.
+#
+# Note: This script uses intentional security features that may trigger shellcheck warnings:
+# - History manipulation (HISTCONTROL, HISTIGNORE, set +o history) for sensitive data protection
+
+set -euo pipefail
+
+# Security: Prevent command from being saved in shell history
+# shellcheck disable=SC2034  # HISTCONTROL and HISTIGNORE are used by shell
+set +H  # Disable history expansion
+export HISTCONTROL=ignorespace:ignoredups
+export HISTIGNORE="*get-api-key*:*api*key*:*secret*:*token*"
+
+# Trap to ensure cleanup on exit
+trap 'cleanup_sensitive_vars' EXIT INT TERM
+
+# Script name for error messages
+# shellcheck disable=SC2155  # basename is safe and readonly requires assignment
+readonly SCRIPT_NAME="$(basename "$0")"
+
+# Function to cleanup sensitive variables
+cleanup_sensitive_vars() {
+    unset API_KEY
+    # Clear history of current session for this command if it contains sensitive data
+    if command -v history >/dev/null 2>&1; then
+        history -d "$(history 1 | awk '{print $1}')" 2>/dev/null || true
+    fi
+}
+
+# Function to setup secure environment
+setup_secure_environment() {
+    # Temporarily disable history for this session
+    # shellcheck disable=SC2039  # set +o history is intentional for security
+    set +o history 2>/dev/null || true
+
+    # Display security warning for sensitive output
+    echo "🔒 SECURITY WARNING: This script will output a sensitive API key!" >&2
+    echo "   • Ensure your terminal session is private and secure" >&2
+    echo "   • Be careful when copying/pasting the output" >&2
+    echo "   • Consider piping to clipboard or file with restricted permissions" >&2
+    echo "" >&2
+}
+
+# Function to display usage information
+show_usage() {
+    cat << EOF
+Usage: $SCRIPT_NAME <service_name>
+
+Retrieve an API key from the macOS Keychain.
+
+Arguments:
+  service_name    The name/identifier for the API key (e.g., SERVICEA_API_KEY)
+
+Example:
+  $SCRIPT_NAME SERVICEA_API_KEY
+
+🔒 SECURITY RECOMMENDATIONS:
+  • Ensure your terminal session is private before running this command
+  • Be careful when copying/pasting API keys from terminal output
+  • Consider using secure methods to handle the output:
+    - Pipe to clipboard: $SCRIPT_NAME SERVICE | pbcopy
+    - Save to secure file: $SCRIPT_NAME SERVICE > ~/.keys/service.key && chmod 600 ~/.keys/service.key
+  • Never share API keys or commit them to version control
+  • This script automatically prevents commands from being saved in shell history
+
+⚠️  SECURITY NOTES:
+  - The key must have been previously stored with store-api-key
+  - You may be prompted to allow access on first use
+  - The API key is printed to stdout - handle it securely
+  - API keys are sensitive data - treat them like passwords
+
+🚫 NEVER share your API keys or commit them to version control!
+EOF
+}
+
+# Function to display usage and exit with success (for help)
+usage() {
+    show_usage
+    exit 0
+}
+
+# Function to display usage and exit with error
+usage_error() {
+    show_usage
+    exit 1
+}
+
+# Function to display error messages
+error() {
+    echo "Error: $1" >&2
+    cleanup_sensitive_vars
+    exit "${2:-1}"
+}
+
+# Check if running on macOS
+if [[ "$OSTYPE" != "darwin"* ]]; then
+    error "This script requires macOS" 2
+fi
+
+# Check if security command is available
+if ! command -v security &> /dev/null; then
+    error "The 'security' command is not available" 2
+fi
+
+# Setup secure environment
+setup_secure_environment
+
+# Check for help flag
+if [[ $# -eq 1 && ("$1" == "--help" || "$1" == "-h") ]]; then
+    usage
+fi
+
+# Check number of arguments
+if [[ $# -ne 1 ]]; then
+    usage_error
+fi
+
+# Assign argument to variable
+readonly SERVICE_NAME="$1"
+
+# Validate service name
+if [[ -z "$SERVICE_NAME" ]]; then
+    error "Service name cannot be empty" 3
+fi
+
+# Validate service name format (alphanumeric, underscore, dash)
+if ! [[ "$SERVICE_NAME" =~ ^[A-Za-z0-9_-]+$ ]]; then
+    error "Service name must contain only letters, numbers, underscores, and dashes" 3
+fi
+
+# Retrieve the API key from the keychain
+# -a: account name (using current user)
+# -s: service name
+# -w: output password only
+API_KEY=$(security find-generic-password \
+    -a "$USER" \
+    -s "$SERVICE_NAME" \
+    -w \
+    2>/dev/null) || {
+    error "API key for '$SERVICE_NAME' not found in keychain" 4
+}
+
+# Output the API key
+echo "$API_KEY"
+
+# Security reminder
+echo "🔒 Security reminder: Handle this API key securely!" >&2
+
+# Clear sensitive variables before exit
+cleanup_sensitive_vars

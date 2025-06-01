@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "shrimp-task-manager": {
+      "command": "npx",
+      "args": ["-y", "mcp-shrimp-task-manager"],
+      "env": {
+        "DATA_DIR": "/Users/bruno/Developer/credentials-storage-and-management",
+        "TEMPLATES_USE": "en",
+        "ENABLE_GUI": "true"
+      }
+    },
+    "shellcheckDocs": {
+      "url": "https://gitmcp.io/koalaman/shellcheck"
+    }
+  }
+}

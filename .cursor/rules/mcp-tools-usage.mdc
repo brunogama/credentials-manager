@@ -1,0 +1,106 @@
+---
+description: Comprehensive usage guidelines for all MCP servers in the configuration
+globs: "**/**"
+alwaysApply: true
+---
+
+## Sequential Thinking MCP
+- Use **Sequential Thinking MCP** for debugging, troubleshooting, complex problem-solving, and detailed project planning.
+- Essential for multi-step reasoning tasks, research planning, and breaking down complex problems.
+- Avoid excessive recursive calls; trigger intelligently only when new progress or significant information is possible.
+- Always use when tackling problems that require systematic analysis or when exploring multiple solution paths.
+
+## Information Gathering (Brave Search & Tavily MCP)
+- Use **Brave Search MCP** for initial broad searches, general information gathering, and basic fact-finding.
+- Use **Tavily MCP** for deeper insights, specialized research, academic content, and advanced content extraction.
+- Combine effectively with **Sequential Thinking MCP** to refine search strategies and acquire up-to-date information.
+- Prioritize reliable and concise sources, always include full URLs and citations.
+- Use search parameters strategically (count, offset, time ranges, domain filtering).
+- Document all search queries and results for reproducibility.
+
+## Content Retrieval (Fetch MCP)
+- Use **Fetch MCP** for direct retrieval of web content from known URLs.
+- Best for accessing API documentation, technical resources, and specific web pages.
+- Maintain full source attribution and handle various content types appropriately.
+- Use when you have specific URLs from search results that need detailed content extraction.
+
+## File System Operations (Filesystem MCP)
+- Use **Filesystem MCP** for all file and directory operations within allowed directories:
+  - `/Users/bruno/Desktop`
+  - `/Users/bruno/Developer`
+- Always use absolute paths for reliability; avoid relative paths unless explicitly requested.
+- Essential for reading, writing, creating, moving, and searching files.
+- Use `read_multiple_files` for batch operations to improve efficiency.
+- Preferred over shell commands for file operations as it provides better error handling and security.
+
+## Desktop Commander MCP
+- Use **Desktop Commander MCP** for executing shell commands that don't require direct developer interaction.
+- Forward all terminal operations, system commands, and automation tasks to Desktop Commander.
+- Destructive commands should be confirmed with the user before execution.
+- Check configuration and allowed directories before file operations.
+- Use for system administration, package management, and build processes.
+- Always use absolute paths and verify command success through proper error handling.
+
+## Mobile Automation (Mobile MCP)
+- Use **Mobile MCP** for mobile device testing, app automation, and mobile UI interactions.
+- Requires device selection before use - always list available devices first.
+- Essential for mobile app development, testing workflows, and device-specific operations.
+- Use screenshots and element listing to understand current screen state before interactions.
+- Handle both iOS simulators and Android devices appropriately.
+- Coordinate with other tools for mobile development workflows.
+
+## Persistent Storage (Memory MCP)
+- Use **Memory MCP** for storing important findings, configuration data, and cross-conversation information.
+- Store data with appropriate TTL values for temporary information.
+- Essential for maintaining context across development sessions.
+- Use for caching expensive computation results and maintaining project state.
+- Store research findings, important URLs, and reusable code snippets.
+- Clear cache strategically to manage storage efficiently.
+
+## Task Management (Shrimp Task Manager MCP)
+- Use **Shrimp Task Manager MCP** for project organization, task tracking, and workflow management.
+- Data stored in `/Users/bruno/Developer/credentials-storage-and-management`.
+- Uses English templates (TEMPLATES_USE="en") with GUI disabled.
+- Essential for breaking down complex projects into manageable tasks.
+- Coordinate with Sequential Thinking for project planning and task prioritization.
+- Track progress and dependencies across development workflows.
+
+## Tool Coordination Guidelines
+
+### Research Workflows
+1. Start with **Sequential Thinking** to plan the research strategy
+2. Use **Brave Search** for broad information gathering
+3. Use **Tavily** for deep, specialized research
+4. Use **Fetch** to retrieve specific content from discovered URLs
+5. Store important findings in **Memory** for future reference
+6. Document tasks and progress in **Shrimp Task Manager**
+
+### Development Workflows
+1. Use **Filesystem** for all code file operations
+2. Use **Desktop Commander** for build, test, and deployment commands
+3. Use **Mobile MCP** for mobile-specific testing and automation
+4. Store project configurations and important data in **Memory**
+5. Track development tasks and milestones in **Shrimp Task Manager**
+
+### Problem-Solving Workflows
+1. Always start with **Sequential Thinking** for complex problems
+2. Use **Brave Search** and **Tavily** for researching solutions
+3. Use **Fetch** to access documentation and examples
+4. Implement solutions using **Filesystem** and **Desktop Commander**
+5. Test mobile aspects with **Mobile MCP** when relevant
+6. Document solutions and learnings in **Memory**
+
+## Security and Safety Guidelines
+- Always verify file paths are within allowed directories
+- Confirm destructive operations before execution
+- Use proper error handling for all tool interactions
+- Maintain source attribution for all external content
+- Store sensitive information appropriately using **Memory MCP**
+- Follow the principle of least privilege for all operations
+
+## Integration Best Practices
+- Combine tools strategically rather than using them in isolation
+- Use **Sequential Thinking** to coordinate complex multi-tool workflows
+- Maintain consistency in data formats across tools
+- Document all tool interactions for reproducibility
+- Use appropriate tool for each specific task rather than forcing functionality

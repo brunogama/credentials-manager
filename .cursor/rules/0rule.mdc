@@ -1,0 +1,16 @@
+---
+description: Essential development workflow
+globs:
+alwaysApply: always
+---
+
+Use TDD for code conversation
+
+1. Write failing test
+2. Execute test - it must fail
+3. Implement minimal code to make the test pass
+4. Execute test - it must pass
+5. Refactor
+6. Test
+7. Keep in this cycle until the spec is implemented
+8. Commit code implemented and tests - using convetional commit specification

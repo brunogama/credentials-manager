@@ -1,0 +1,17 @@
+repos:
+- repo: https://github.com/dnephin/pre-commit-bash
+  rev: v0.2.0
+  hooks:
+  - id: bash-check # Check bash syntax
+  - id: shellcheck # Run shellcheck
+  - id: shfmt # Format shell scripts
+    args: [ "-i", "2", "-ci", "-bn" ] # 2 spaces indent, indent switch cases, binary ops may start a line
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.5.0
+  hooks:
+  - id: check-merge-conflict # Check for merge conflict strings
+  - id: trailing-whitespace # Remove trailing whitespace
+  - id: end-of-file-newline # Ensure files end with a newline
+  - id: check-added-large-files # Prevent giant files from being committed
+  - id: check-executables-have-shebangs # Ensure shell scripts have shebangs

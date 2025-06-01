@@ -1,0 +1,25 @@
+---
+description: "Guidelines for shellscripting implementation"
+globs:
+    - **/*.sh
+    - **/*.bash
+    _ **/*.zsh
+    _ **/*.ksh
+    - **/*.bats
+alwaysApply: true
+---
+
+# Guidelines for shellscripting implementation
+
+0. Use TDD - create unit tests using bats framework
+1. All scripts should be written in bash.
+2. All scripts should be written in a way that is easy to understand and maintain.
+3. All scripts should be written in a way that is easy to test.
+4. All scripts should be written in a way that is easy to deploy.
+5. All scripts should be written in a way that is easy to debug.
+6. IF a script that modifies files or directories on failure, it should be written in
+7. a way that is easy to rollback.
+8. Max of 2 level nesting
+9. 2 spaces tabbing
+10. Every script created must pass shellcheck check.
+11. All scripts must be unit tested. Test commands should be sent to execute_command mcp

@@ -1,0 +1,85 @@
+#!/bin/bash
+# Mock security command for testing
+
+case "$1" in
+  "find-generic-password")
+    # Parse arguments
+    service=""
+    account=""
+    password_only=false
+
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        -s) service="$2"; shift 2 ;;
+        -a) account="$2"; shift 2 ;;
+        -w) password_only=true; shift ;;
+        *) shift ;;
+      esac
+    done
+
+    # Check if test key exists
+    if [[ "$service" == "TEST_API_KEY" ]]; then
+      if [[ "$password_only" == "true" ]]; then
+        echo "test-api-key-12345"
+      else
+        echo "password: \"test-api-key-12345\""
+      fi
+      exit 0
+    elif [[ "$service" == "SERVICEA_API_KEY" ]]; then
+      if [[ "$password_only" == "true" ]]; then
+        echo "servicea-key-67890"
+      else
+        echo "password: \"servicea-key-67890\""
+      fi
+      exit 0
+    elif [[ "$service" == "AWS_API_KEY" ]]; then
+      if [[ "$password_only" == "true" ]]; then
+        echo "aws-key-abcdef"
+      else
+        echo "password: \"aws-key-abcdef\""
+      fi
+      exit 0
+    else
+      echo "security: SecKeychainSearchCopyNext: The specified item could not be found in the keychain." >&2
+      exit 44
+    fi
+    ;;
+  "add-generic-password")
+    # Mock successful addition
+    exit 0
+    ;;
+  "dump-keychain")
+    # Mock keychain dump output
+    cat << 'DUMP_EOF'
+keychain: "/Users/testuser/Library/Keychains/login.keychain-db"
+version: 512
+class: 0x00000010
+attributes:
+    0x00000007 <blob>="TEST_API_KEY"
+    "acct"<blob>="testuser"
+    "svce"<blob>="TEST_API_KEY"
+data:
+"test-api-key-12345"
+
+class: 0x00000010
+attributes:
+    0x00000007 <blob>="SERVICEA_API_KEY"
+    "acct"<blob>="testuser"
+    "svce"<blob>="SERVICEA_API_KEY"
+data:
+"servicea-key-67890"
+
+class: 0x00000010
+attributes:
+    0x00000007 <blob>="AWS_API_KEY"
+    "acct"<blob>="testuser"
+    "svce"<blob>="AWS_API_KEY"
+data:
+"aws-key-abcdef"
+DUMP_EOF
+    ;;
+  *)
+    echo "Mock security command: unknown option $1" >&2
+    exit 1
+    ;;
+esac

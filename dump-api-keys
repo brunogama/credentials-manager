@@ -1,0 +1,235 @@
+#!/bin/bash
+#
+# dump-api-keys - Export API keys from macOS Keychain as environment variables
+# Usage:
+#   eval $(dump-api-keys)           # Load all API keys into environment
+#   dump-api-keys > keys.env        # Save to file for sourcing
+#   dump-api-keys --pattern FOO     # Only dump keys containing FOO
+#
+# This script exports all API keys (service names ending with _KEY)
+# that were stored using the store-api-key script.
+#
+# Note: This script uses intentional security features that may trigger shellcheck warnings:
+# - History manipulation (HISTCONTROL, HISTIGNORE, set +o history) for sensitive data protection
+
+set -euo pipefail
+
+# Security: Prevent command from being saved in shell history
+# shellcheck disable=SC2034  # HISTCONTROL and HISTIGNORE are used by shell
+set +H  # Disable history expansion
+export HISTCONTROL=ignorespace:ignoredups
+export HISTIGNORE="*dump-api-keys*:*api*key*:*secret*:*token*:*export*"
+
+# Trap to ensure cleanup on exit
+trap 'cleanup_sensitive_vars' EXIT INT TERM
+
+# Script name for error messages
+# shellcheck disable=SC2155  # basename is safe and readonly requires assignment
+readonly SCRIPT_NAME="$(basename "$0")"
+
+# Default pattern matches all keys ending with _KEY
+PATTERN=".*API_KEY$"
+SAFE_MODE=false
+
+# Function to cleanup sensitive variables
+cleanup_sensitive_vars() {
+    unset api_key
+    unset escaped_value
+    # Clear history of current session for this command if it contains sensitive data
+    if command -v history >/dev/null 2>&1; then
+        history -d "$(history 1 | awk '{print $1}')" 2>/dev/null || true
+    fi
+}
+
+# Function to setup secure environment
+setup_secure_environment() {
+    # Temporarily disable history for this session
+    # shellcheck disable=SC2039  # set +o history is intentional for security
+    set +o history 2>/dev/null || true
+
+    # Display security warning
+    echo "🔒 SECURITY WARNING: This script will output sensitive API keys!" >&2
+    echo "   • Ensure your terminal session is private and secure" >&2
+    echo "   • Consider using --safe mode to generate a file instead of eval" >&2
+    echo "   • Be careful when redirecting output to files" >&2
+    echo "   • Never commit the output to version control" >&2
+    echo "" >&2
+}
+
+# Function to display usage information
+usage() {
+    cat << EOF
+Usage: $SCRIPT_NAME [OPTIONS]
+
+Export API keys from macOS Keychain as environment variables.
+
+Options:
+  -p, --pattern PATTERN   Only export keys matching PATTERN (regex)
+  -s, --safe              Generate a sourceable file instead of eval-ready output
+  -h, --help              Show this help message
+
+Examples:
+  # Load all API keys into current shell
+  eval \$($SCRIPT_NAME)
+
+  # Save to file and source it (safer)
+  $SCRIPT_NAME > ~/.api-keys.env
+  source ~/.api-keys.env
+
+  # Only export keys containing "AWS"
+  eval \$($SCRIPT_NAME --pattern AWS)
+
+  # Export in safe mode (with instructions)
+  $SCRIPT_NAME --safe > api-keys.sh
+
+🔒 SECURITY RECOMMENDATIONS:
+  • Use --safe mode when possible to generate files instead of eval
+  • Store output files in secure locations with restricted permissions (chmod 600)
+  • Never commit API key files to version control
+  • Use .gitignore to exclude API key files
+  • Regularly rotate your API keys
+  • Consider using environment-specific key management
+
+⚠️  SECURITY WARNING:
+  Using eval is convenient but can be dangerous. Consider using the
+  file-based approach (saving to a file and sourcing it) for better security.
+
+🚫 NEVER commit API keys to version control or share them publicly!
+EOF
+    exit 0
+}
+
+# Function to display error messages
+error() {
+    echo "Error: $1" >&2
+    cleanup_sensitive_vars
+    exit "${2:-1}"
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -p|--pattern)
+            PATTERN="$2"
+            shift 2
+            ;;
+        -s|--safe)
+            SAFE_MODE=true
+            shift
+            ;;
+        -h|--help)
+            usage
+            ;;
+        *)
+            error "Unknown option: $1" 1
+            ;;
+    esac
+done
+
+# Check if running on macOS
+if [[ "$OSTYPE" != "darwin"* ]]; then
+    error "This script requires macOS" 2
+fi
+
+# Check if security command is available
+if ! command -v security &> /dev/null; then
+    error "The 'security' command is not available" 2
+fi
+
+# Setup secure environment
+setup_secure_environment
+
+# Function to get all API key service names from keychain
+get_api_key_services() {
+    # Dump keychain and extract service names
+    # The dump-keychain output includes lines like: "svce"<blob>="SERVICE_NAME"
+    security dump-keychain 2>/dev/null | \
+        awk -F'"' '/"svce"<blob>=/ && $4 ~ /'"$PATTERN"'/ {print $4}' | \
+        sort -u || true
+}
+
+# Function to escape a value for safe shell usage
+escape_value() {
+    printf '%q' "$1"
+}
+
+# Header for safe mode
+if [[ "$SAFE_MODE" == "true" ]]; then
+    cat << 'EOF'
+#!/bin/bash
+# Generated by dump-api-keys
+# Source this file to load API keys into your environment
+# Usage: source this_file.sh
+#
+# 🔒 SECURITY NOTES:
+#   • This file contains sensitive API keys
+#   • Set restrictive permissions: chmod 600 this_file.sh
+#   • Never commit this file to version control
+#   • Add to .gitignore: echo "*.env" >> .gitignore
+
+EOF
+fi
+
+# Get list of API key services
+services=$(get_api_key_services)
+
+if [[ -z "$services" ]]; then
+    if [[ "$SAFE_MODE" == "true" ]]; then
+        echo "# No API keys found matching pattern: $PATTERN" >&2
+    else
+        echo "# No API keys found matching pattern: $PATTERN" >&2
+    fi
+    exit 0
+fi
+
+# Export count for reporting
+count=0
+
+# Process each service
+while IFS= read -r service; do
+    # Skip empty lines
+    [[ -z "$service" ]] && continue
+
+    # Validate service name (alphanumeric, underscore, dash only)
+    if ! [[ "$service" =~ ^[A-Za-z0-9_-]+$ ]]; then
+        echo "# Warning: Skipping invalid service name: $service" >&2
+        continue
+    fi
+
+    # Retrieve the API key value
+    if api_key=$(security find-generic-password -a "$USER" -s "$service" -w 2>/dev/null); then
+        # Escape the value for safe shell usage
+        escaped_value=$(escape_value "$api_key")
+
+        # Output the export statement
+        echo "export $service=$escaped_value"
+        ((count++))
+
+        # Clear the api_key variable immediately after use
+        unset api_key
+    else
+        echo "# Warning: Could not retrieve key for: $service" >&2
+    fi
+done <<< "$services"
+
+# Summary in safe mode
+if [[ "$SAFE_MODE" == "true" ]]; then
+    echo ""
+    echo "# Exported $count API keys"
+    echo "# Remember to set secure permissions: chmod 600 \$0"
+    echo "# Add to .gitignore to prevent accidental commits"
+fi
+
+# If no keys were exported successfully
+if [[ $count -eq 0 ]]; then
+    echo "# No API keys could be retrieved" >&2
+    exit 1
+fi
+
+# Final security reminder
+if [[ "$SAFE_MODE" != "true" ]]; then
+    echo "# 🔒 Security reminder: Handle these API keys securely!" >&2
+fi
+
+# Clear sensitive variables before exit
+cleanup_sensitive_vars
